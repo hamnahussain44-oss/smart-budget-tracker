@@ -1,0 +1,9 @@
+target/
+backup-before-maven/
+.vscode/
+.idea/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example

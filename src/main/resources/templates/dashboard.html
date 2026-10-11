@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Budget Tracker</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f3ff;
+            color: #29243b;
+        }
+
+        header {
+            background: #6c4ce3;
+            color: white;
+            padding: 24px 8%;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            color: #ffd6e7;
+        }
+
+        header p {
+            margin-bottom: 0;
+            color: #eee8ff;
+        }
+
+        main {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .welcome {
+            margin-bottom: 28px;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(40, 30, 80, 0.06);
+        }
+
+        .card h3 {
+            margin-top: 0;
+            color: #777087;
+            font-size: 15px;
+        }
+
+        .amount {
+            font-size: 28px;
+            font-weight: bold;
+            color: #6c4ce3;
+        }
+
+        .section {
+            margin-top: 30px;
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+        }
+
+        .section h2 {
+            margin-top: 0;
+        }
+
+        .trend-row { display: grid; grid-template-columns: 82px minmax(80px, 1fr) 90px; gap: 12px; align-items: center; margin: 14px 0; }
+        .trend-label, .trend-total { font-size: 14px; color: var(--text); }
+        .trend-total { text-align: right; font-weight: 600; }
+        .trend-track { height: 22px; background: var(--primary-soft); border-radius: 999px; overflow: hidden; display: flex; }
+        .trend-segment { height: 100%; min-width: 2px; }
+        .chart-color-0 { background: #e879a8; }
+        .chart-color-1 { background: #8c6bd9; }
+        .chart-color-2 { background: #55a7a0; }
+        .chart-color-3 { background: #e4a34f; }
+        .chart-color-4 { background: #718bd4; }
+        .chart-color-5 { background: #a1b85f; }
+        .trend-legend { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-top: 20px; }
+        .trend-legend-item { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 14px; }
+        .trend-swatch { width: 12px; height: 12px; border-radius: 4px; }
+        .insight-card { display: grid; gap: 8px; }
+        .insight-card p { margin: 0; }
+        .alert-list { display: grid; gap: 10px; }
+        .alert-item { padding: 12px 14px; border-radius: 10px; background: #fff4e5; }
+        .alert-item.over-budget { background: #fff0ef; }
+        .alert-item strong { margin-right: 6px; }
+        .repeat-option { display: flex; align-items: center; gap: 9px; grid-column: 1 / -1; color: var(--text); }
+        .expense-form label.repeat-option { display: flex; }
+        .repeat-option input { width: auto; padding: 0; border: 0; }
+
+        .category {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px 20px;
+            padding: 15px 0;
+            border-bottom: 1px solid #eeeaf5;
+        }
+
+        .category-progress {
+            grid-column: 1 / -1;
+            height: 10px;
+            overflow: hidden;
+            background: #eeeaf5;
+            border-radius: 999px;
+        }
+
+        .category-progress-fill {
+            height: 100%;
+            border-radius: inherit;
+            background: #6c4ce3;
+        }
+
+        .category-progress-fill.near-limit {
+            background: #d98b18;
+        }
+
+        .category-progress-fill.over-budget {
+            background: #d04438;
+        }
+
+        .category:last-child {
+            border-bottom: none;
+        }
+
+        .category-details {
+            display: grid;
+            gap: 6px;
+        }
+
+        .category-status {
+            font-size: 14px;
+        }
+
+        .within-budget {
+            color: #16794b;
+        }
+
+        .near-limit {
+            color: #a15c00;
+            font-weight: bold;
+        }
+
+        .over-budget {
+            color: #b42318;
+            font-weight: bold;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        .filter-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: end;
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        .filter-controls label {
+            display: grid;
+            gap: 6px;
+            color: #555064;
+            font-weight: bold;
+        }
+
+        .filter-controls input,
+        .filter-controls select,
+        .filter-controls button {
+            padding: 10px;
+            border: 1px solid #d8d2e8;
+            border-radius: 8px;
+            font: inherit;
+        }
+
+        .filter-controls button {
+            background: #f5f3ff;
+            cursor: pointer;
+        }
+
+        .expense-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .expense-table th,
+        .expense-table td {
+            padding: 13px 10px;
+            border-bottom: 1px solid #eeeaf5;
+        }
+
+        .expense-table th {
+            color: #777087;
+            font-size: 14px;
+        }
+
+        .expense-table td:last-child,
+        .expense-table th:last-child {
+            text-align: right;
+        }
+
+        .expense-form {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .month-picker-form {
+            display: flex;
+            align-items: end;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .month-picker-form label {
+            display: grid;
+            gap: 6px;
+            color: #555064;
+            font-weight: bold;
+        }
+
+        .month-picker-form input,
+        .month-picker-form button {
+            padding: 10px;
+            border: 1px solid #d8d2e8;
+            border-radius: 8px;
+            font: inherit;
+        }
+
+        .month-picker-form button {
+            background: #6c4ce3;
+            border: none;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .download-link {
+            display: inline-block;
+            margin-bottom: 12px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            background: #6c4ce3;
+            color: white;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .edit-expense-form {
+            display: grid;
+            gap: 8px;
+            min-width: 210px;
+            padding: 10px 0;
+        }
+
+        .edit-expense-form input,
+        .edit-expense-form select,
+        .edit-expense-form button {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #d8d2e8;
+            border-radius: 7px;
+            font: inherit;
+        }
+
+        .edit-expense-form button {
+            background: #6c4ce3;
+            border: none;
+            color: white;
+            cursor: pointer;
+        }
+
+        .delete-expense-form button {
+            margin-top: 8px;
+            padding: 8px 10px;
+            border: 1px solid #e2b8b5;
+            border-radius: 7px;
+            background: #fff7f6;
+            color: #b42318;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        .budget-delete-form button {
+            padding: 8px 12px;
+            border: 1px solid #e2b8b5;
+            border-radius: 8px;
+            background: #fff7f6;
+            color: #b42318;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        .expense-form label {
+            display: grid;
+            gap: 6px;
+            color: #555064;
+            font-weight: bold;
+        }
+
+        .expense-form input,
+        .expense-form select,
+        .expense-form button {
+            padding: 11px;
+            border: 1px solid #d8d2e8;
+            border-radius: 8px;
+            font: inherit;
+        }
+
+        .expense-form .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .expense-form button {
+            background: #6c4ce3;
+            border: none;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .budget-edit-form {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: end;
+            gap: 10px;
+        }
+
+        .budget-edit-form label {
+            display: grid;
+            gap: 5px;
+            color: #555064;
+            font-size: 14px;
+        }
+
+        .budget-edit-form input,
+        .budget-edit-form button {
+            padding: 9px;
+            border: 1px solid #d8d2e8;
+            border-radius: 8px;
+            font: inherit;
+        }
+
+        .budget-edit-form button {
+            background: #f5f3ff;
+            cursor: pointer;
+        }
+
+        .new-budget-form {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: end;
+            gap: 12px;
+            margin-top: 20px;
+            padding-top: 18px;
+            border-top: 1px solid #eeeaf5;
+        }
+
+        .new-budget-form label {
+            display: grid;
+            gap: 5px;
+            color: #555064;
+            font-size: 14px;
+        }
+
+        .new-budget-form input,
+        .new-budget-form button {
+            padding: 9px;
+            border: 1px solid #d8d2e8;
+            border-radius: 8px;
+            font: inherit;
+        }
+
+        .new-budget-form button {
+            background: #6c4ce3;
+            border: none;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        @media (max-width: 650px) {
+            .cards {
+                grid-template-columns: 1fr;
+            }
+
+            .expense-form {
+                grid-template-columns: 1fr;
+            }
+
+            .expense-form .full-width {
+                grid-column: auto;
+            }
+        }
+
+        body {
+            --page-bg: #fff6fa;
+            --surface: #ffffff;
+            --text: #3d3040;
+            --muted: #897387;
+            --primary: #c95f91;
+            --primary-soft: #ffe6f0;
+            --border: #f0dce6;
+            --border-strong: #e5bfd1;
+            --header-bg: linear-gradient(135deg, #ad4b78, #d879a2);
+            --title-color: #fff2f7;
+            --subtitle-color: #ffeaf2;
+            --shadow: 0 8px 24px rgba(142, 60, 97, 0.08);
+            background: var(--page-bg);
+            color: var(--text);
+        }
+
+        body[data-theme="lavender"] {
+            --page-bg: #f7f4ff;
+            --surface: #ffffff;
+            --text: #302b40;
+            --muted: #777087;
+            --primary: #7559d9;
+            --primary-soft: #eee8ff;
+            --border: #e9e3f5;
+            --border-strong: #d8d2e8;
+            --header-bg: linear-gradient(135deg, #5940bd, #8d73e8);
+            --title-color: #f1ebff;
+            --subtitle-color: #eee8ff;
+            --shadow: 0 8px 24px rgba(60, 45, 110, 0.08);
+        }
+
+        body[data-theme="ocean"] {
+            --page-bg: #f1f9fc;
+            --surface: #ffffff;
+            --text: #263b45;
+            --muted: #68818d;
+            --primary: #3989a4;
+            --primary-soft: #def2f7;
+            --border: #d7eaf0;
+            --border-strong: #b9d9e3;
+            --header-bg: linear-gradient(135deg, #246d83, #53a5bb);
+            --title-color: #e8faff;
+            --subtitle-color: #ddf5fb;
+            --shadow: 0 8px 24px rgba(36, 95, 115, 0.08);
+        }
+
+        body[data-theme="sage"] {
+            --page-bg: #f4f8f2;
+            --surface: #ffffff;
+            --text: #344036;
+            --muted: #738174;
+            --primary: #6e9872;
+            --primary-soft: #e6f0e4;
+            --border: #dfe9dc;
+            --border-strong: #c9dac7;
+            --header-bg: linear-gradient(135deg, #527b58, #86aa82);
+            --title-color: #f0f8ef;
+            --subtitle-color: #e8f3e6;
+            --shadow: 0 8px 24px rgba(65, 100, 70, 0.08);
+        }
+
+        header {
+            background: var(--header-bg);
+            color: #ffffff;
+        }
+
+        header h1 { color: var(--title-color); }
+        header p { color: var(--subtitle-color); }
+
+        .card,
+        .section {
+            background: var(--surface);
+            box-shadow: var(--shadow);
+        }
+
+        .card h3,
+        .expense-table th { color: var(--muted); }
+
+        .amount { color: var(--primary); }
+        .category { border-color: var(--border); }
+        .category-progress { background: var(--primary-soft); }
+        .category-progress-fill { background: var(--primary); }
+
+        .filter-controls label,
+        .month-picker-form label,
+        .expense-form label,
+        .budget-edit-form label,
+        .new-budget-form label { color: var(--text); }
+
+        .filter-controls input,
+        .filter-controls select,
+        .filter-controls button,
+        .month-picker-form input,
+        .month-picker-form button,
+        .expense-form input,
+        .expense-form select,
+        .expense-form button,
+        .budget-edit-form input,
+            .budget-edit-form button,
+            .budget-delete-form button,
+        .new-budget-form input,
+        .new-budget-form button,
+        .edit-expense-form input,
+        .edit-expense-form select,
+        .edit-expense-form button {
+            border-color: var(--border-strong);
+            background-color: var(--surface);
+            color: var(--text);
+        }
+
+        .filter-controls button,
+        .budget-edit-form button { background: var(--primary-soft); }
+        .budget-delete-form button { background: #fff7f6; color: #b42318; }
+
+        .month-picker-form button,
+        .download-link,
+        .expense-form button,
+        .new-budget-form button,
+        .edit-expense-form button {
+            background: var(--primary);
+            color: #ffffff;
+        }
+
+        .expense-table th,
+        .expense-table td { border-color: var(--border); }
+
+        .theme-picker {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+            color: var(--subtitle-color);
+            font-size: 14px;
+        }
+
+        .theme-picker select {
+            padding: 7px 10px;
+            border: 1px solid rgba(255, 255, 255, 0.55);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.16);
+            color: #ffffff;
+            font: inherit;
+        }
+
+        .theme-picker option { color: #302b40; }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>Smart Budget Tracker</h1>
+    <p>Understand your spending. Take control of your money.</p>
+    <div class="theme-picker">
+        <label for="themePicker">Colour theme</label>
+        <select id="themePicker">
+            <option value="rose">Soft pink</option>
+            <option value="lavender">Lavender</option>
+            <option value="ocean">Ocean</option>
+            <option value="sage">Sage</option>
+        </select>
+    </div>
+</header>
+
+<main>
+    <div class="welcome">
+        <h2>Your Dashboard</h2>
+        <p th:if="${databaseError == null}">Here's an overview for <span th:text="${month}">this month</span>.</p>
+        <p th:if="${monthError != null}" style="color:#b42318" th:text="${monthError}">Choose a valid month.</p>
+        <p th:if="${databaseError != null}" style="color:#b42318">
+            Could not load your saved data: <span th:text="${databaseError}">Database connection error</span>
+        </p>
+    </div>
+
+    <div class="section">
+        <form class="month-picker-form" action="/dashboard" method="get">
+            <label>View a month
+                <input type="month" name="month" th:value="${monthValue}" required>
+            </label>
+            <button type="submit">Show month</button>
+        </form>
+    </div>
+
+    <div class="cards">
+        <div class="card">
+            <h3>Total Spent</h3>
+            <div class="amount">€<span th:text="${#numbers.formatDecimal(totalSpent, 1, 2)}">0.00</span></div>
+            <p>This month</p>
+        </div>
+
+        <div class="card">
+            <h3>Monthly Budget</h3>
+            <div class="amount">€<span th:text="${#numbers.formatDecimal(totalBudget, 1, 2)}">0.00</span></div>
+            <p>Across all categories</p>
+        </div>
+
+        <div class="card">
+            <h3>Budget Remaining</h3>
+            <div class="amount">€<span th:text="${#numbers.formatDecimal(remaining, 1, 2)}">0.00</span></div>
+            <p>Available to spend</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Overall Monthly Spending Limit</h2>
+        <p th:if="${overallBudgetSuccess != null}" class="within-budget" th:text="${overallBudgetSuccess}">Overall limit saved.</p>
+        <p th:if="${overallBudgetError != null}" class="over-budget" th:text="${overallBudgetError}">Please enter a valid limit.</p>
+        <p th:class="${overallLimitClass}" th:text="${overallLimitStatus}">Set an overall limit to track total spending.</p>
+        <div class="category-progress" role="progressbar"
+             th:if="${overallMonthlyLimit != null}"
+             th:attr="aria-valuenow=${overallPercentUsed}, aria-valuemin=0, aria-valuemax=100, aria-label='Overall monthly limit used'">
+            <div class="category-progress-fill" th:classappend="${overallLimitClass}"
+                 th:style="|width: ${overallBarWidth}%|"></div>
+        </div>
+        <p th:if="${overallMonthlyLimit != null}">
+            This month: €<span th:text="${#numbers.formatDecimal(totalSpent, 1, 2)}">0.00</span>
+            of €<span th:text="${#numbers.formatDecimal(overallMonthlyLimit, 1, 2)}">0.00</span>
+            (<span th:text="${overallPercentUsed}">0</span>%)
+        </p>
+        <form class="month-picker-form" action="/budgets/overall" method="post">
+            <label>Set total monthly limit (€)
+                <input type="number" name="limit" min="0.01" step="0.01"
+                       th:value="${overallMonthlyLimit}" placeholder="e.g. 1000.00" required>
+            </label>
+            <button type="submit">Save overall limit</button>
+        </form>
+    </div>
+
+    <div class="cards">
+        <div class="card insight-card">
+            <h3>Compared with last month</h3>
+            <p th:class="${monthComparisonClass}" th:text="${monthComparison}">No comparison available.</p>
+        </div>
+        <div class="card insight-card">
+            <h3>Budget alerts</h3>
+            <div class="alert-list" th:if="${not #lists.isEmpty(budgetAlerts)}">
+                <div class="alert-item" th:each="alert : ${budgetAlerts}" th:classappend="${alert.styleClass}">
+                    <strong th:text="${alert.category}">Food</strong>
+                    <span th:text="${alert.message}">Near limit</span>
+                </div>
+            </div>
+            <p class="within-budget" th:if="${#lists.isEmpty(budgetAlerts)}">All categories are below the 80% warning level.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Spending Trends</h2>
+        <p>Monthly spending for the six months ending <span th:text="${month}">this month</span>.</p>
+        <p th:if="${!hasTrendSpending}">No spending recorded in this six-month period yet.</p>
+        <div th:if="${hasTrendSpending}">
+            <div class="trend-row" th:each="trendMonth : ${trendMonths}">
+                <span class="trend-label" th:text="${trendMonth.label}">2026-10</span>
+                <div class="trend-track" role="img" th:attr="aria-label=${trendMonth.label + ': €' + #numbers.formatDecimal(trendMonth.total, 1, 2) + ' spent'}">
+                    <span class="trend-segment" th:each="segment : ${trendMonth.segments}"
+                          th:classappend="${segment.colorClass}"
+                          th:style="|width: ${segment.width}%|"
+                          th:title="|${segment.name}: €${#numbers.formatDecimal(segment.amount, 1, 2)}|"></span>
+                </div>
+                <span class="trend-total">€<span th:text="${#numbers.formatDecimal(trendMonth.total, 1, 2)}">0.00</span></span>
+            </div>
+            <div class="trend-legend" aria-label="Chart categories">
+                <span class="trend-legend-item" th:each="category : ${trendCategories}">
+                    <span class="trend-swatch" th:classappend="${category.colorClass}"></span>
+                    <span th:text="${category.name}">Food</span>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Add an Expense</h2>
+        <p th:if="${formSuccess != null}" style="color:#16794b" th:text="${formSuccess}">Expense saved.</p>
+        <p th:if="${formError != null}" style="color:#b42318" th:text="${formError}">Please check the form.</p>
+        <form class="expense-form" action="/expenses" method="post">
+            <label>Amount (€)
+                <input type="number" name="amount" min="0.01" step="0.01" placeholder="e.g. 8.50" required>
+            </label>
+            <label>Category
+                <select name="category" required>
+                    <option value="" disabled selected>Select a category</option>
+                    <option th:each="budget : ${budgets}" th:value="${budget.category}" th:text="${budget.category}">Food</option>
+                </select>
+            </label>
+            <label>Date
+                <input type="date" name="date" th:value="${today}" required>
+            </label>
+            <label>Description
+                <input type="text" name="description" maxlength="255" placeholder="What did you spend on?" required>
+            </label>
+            <label class="repeat-option">
+                <input type="checkbox" name="repeatMonthly" value="true">
+                Repeat this expense monthly from next month
+            </label>
+            <button class="full-width" type="submit">Save Expense</button>
+        </form>
+    </div>
+
+    <div class="section">
+        <h2>Monthly Budgets</h2>
+        <p th:if="${budgetSuccess != null}" style="color:#16794b" th:text="${budgetSuccess}">Budget updated.</p>
+        <p th:if="${budgetError != null}" style="color:#b42318" th:text="${budgetError}">Please check the budget amount.</p>
+        <p th:if="${newBudgetSuccess != null}" style="color:#16794b" th:text="${newBudgetSuccess}">Budget category added.</p>
+        <p th:if="${newBudgetError != null}" style="color:#b42318" th:text="${newBudgetError}">Please check the new category.</p>
+
+        <div class="category" th:each="budget : ${budgets}">
+            <div class="category-details">
+                <strong th:text="${budget.category}">Category</strong>
+                <span class="category-status"
+                      th:classappend="${statusClassByCategory[#strings.toLowerCase(budget.category)]}"
+                      th:text="${statusByCategory[#strings.toLowerCase(budget.category)]}">Budget status</span>
+            </div>
+            <span>€<span th:text="${#numbers.formatDecimal(spendingByCategory[#strings.toLowerCase(budget.category)] ?: 0, 1, 2)}">0.00</span>
+                / €<span th:text="${#numbers.formatDecimal(budget.limit, 1, 2)}">0.00</span></span>
+            <div class="category-progress" role="progressbar"
+                 th:attr="aria-valuenow=${percentUsedByCategory[#strings.toLowerCase(budget.category)]}, aria-valuemin=0, aria-valuemax=100, aria-label=${budget.category + ' budget used'}">
+                <div class="category-progress-fill"
+                     th:classappend="${statusClassByCategory[#strings.toLowerCase(budget.category)]}"
+                     th:style="|width: ${barWidthByCategory[#strings.toLowerCase(budget.category)]}%|"></div>
+            </div>
+            <small th:text="${percentUsedByCategory[#strings.toLowerCase(budget.category)] + '% of budget used'}">0% of budget used</small>
+            <form class="budget-edit-form" action="/budgets" method="post">
+                <label>New monthly limit (€)
+                    <input type="number" name="limit" min="0.01" step="0.01"
+                           th:value="${budget.limit}" required>
+                </label>
+                <input type="hidden" name="category" th:value="${budget.category}">
+                <button type="submit">Update budget</button>
+            </form>
+            <form class="budget-delete-form" action="/budgets/delete" method="post"
+                  onsubmit="return confirm('Delete this budget? Past expenses will stay in your history.');">
+                <input type="hidden" name="category" th:value="${budget.category}">
+                <button type="submit">Delete budget</button>
+            </form>
+        </div>
+        <form class="new-budget-form" action="/budgets/new" method="post">
+            <label>New category
+                <input type="text" name="category" maxlength="40" placeholder="e.g. Coffee" required>
+            </label>
+            <label>Monthly limit (€)
+                <input type="number" name="limit" min="0.01" step="0.01" placeholder="e.g. 50.00" required>
+            </label>
+            <button type="submit">Add category</button>
+        </form>
+    </div>
+
+    <div class="section">
+        <h2>Expense History</h2>
+        <p th:if="${editSuccess != null}" style="color:#16794b" th:text="${editSuccess}">Expense updated.</p>
+        <p th:if="${editError != null}" style="color:#b42318" th:text="${editError}">Please check the expense details.</p>
+        <p th:if="${deleteSuccess != null}" style="color:#16794b" th:text="${deleteSuccess}">Expense deleted.</p>
+        <p th:if="${deleteError != null}" style="color:#b42318" th:text="${deleteError}">Could not delete expense.</p>
+        <a class="download-link" th:href="@{/expenses/export(month=${monthValue})}">Download selected month's CSV</a>
+        <p th:if="${#lists.isEmpty(expenses)}">No expenses saved for this month yet.</p>
+        <div class="table-wrap" th:if="${not #lists.isEmpty(expenses)}">
+            <div class="filter-controls">
+                <label>Category
+                    <select id="categoryFilter">
+                        <option value="">All categories</option>
+                        <option th:each="budget : ${budgets}"
+                                th:value="${#strings.toLowerCase(budget.category)}"
+                                th:text="${budget.category}">Food</option>
+                    </select>
+                </label>
+                <label>Description
+                    <input type="search" id="descriptionFilter" placeholder="Search expenses">
+                </label>
+                <label>From
+                    <input type="date" id="dateFromFilter">
+                </label>
+                <label>To
+                    <input type="date" id="dateToFilter">
+                </label>
+                <button type="button" id="clearFilters">Clear filters</button>
+            </div>
+            <p id="filterResultCount" aria-live="polite"></p>
+            <p id="noFilterResults" hidden>No expenses match these filters.</p>
+            <table class="expense-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Category</th>
+                        <th>Amount</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="expense : ${expenses}"
+                        th:attr="data-category=${#strings.toLowerCase(expense.category)}, data-date=${expense.date}, data-description=${#strings.toLowerCase(expense.description)}">
+                        <td th:text="${expense.date}">2026-10-11</td>
+                        <td th:text="${expense.description}">Groceries</td>
+                        <td th:text="${expense.category}">Food</td>
+                        <td>€<span th:text="${#numbers.formatDecimal(expense.amount, 1, 2)}">0.00</span></td>
+                        <td>
+                            <details>
+                                <summary>Edit</summary>
+                                <form class="edit-expense-form" action="/expenses/update" method="post">
+                                    <input type="hidden" name="id" th:value="${expense.id}">
+                                    <input type="number" name="amount" min="0.01" step="0.01"
+                                           th:value="${expense.amount}" aria-label="Amount" required>
+                                    <select name="category" aria-label="Category" required>
+                                        <option th:if="${not #sets.contains(budgetCategoryNames, expense.category)}"
+                                                th:value="${expense.category}" th:text="${expense.category}"
+                                                selected>Past category</option>
+                                        <option th:each="budget : ${budgets}" th:value="${budget.category}"
+                                                th:text="${budget.category}"
+                                                th:selected="${budget.category.equalsIgnoreCase(expense.category)}">Food</option>
+                                    </select>
+                                    <input type="date" name="date" th:value="${expense.date}" aria-label="Date" required>
+                                    <input type="text" name="description" maxlength="255"
+                                           th:value="${expense.description}" aria-label="Description" required>
+                                    <button type="submit">Save changes</button>
+                                </form>
+                            </details>
+                            <form class="delete-expense-form" action="/expenses/delete" method="post"
+                                  onsubmit="return confirm('Delete this expense? This cannot be undone.');">
+                                <input type="hidden" name="id" th:value="${expense.id}">
+                                <input type="hidden" name="month" th:value="${monthValue}">
+                                <button type="submit">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<script>
+    const categoryFilter = document.getElementById("categoryFilter");
+    if (categoryFilter) {
+        const dateFromFilter = document.getElementById("dateFromFilter");
+        const dateToFilter = document.getElementById("dateToFilter");
+        const descriptionFilter = document.getElementById("descriptionFilter");
+        const expenseRows = Array.from(document.querySelectorAll(".expense-table tbody tr"));
+        const filterResultCount = document.getElementById("filterResultCount");
+        const noFilterResults = document.getElementById("noFilterResults");
+
+        function filterExpenses() {
+            const selectedCategory = categoryFilter.value;
+            const dateFrom = dateFromFilter.value;
+            const dateTo = dateToFilter.value;
+            const description = descriptionFilter.value.trim().toLowerCase();
+            let visibleCount = 0;
+
+            expenseRows.forEach((row) => {
+                const matchesCategory = !selectedCategory || row.dataset.category === selectedCategory;
+                const matchesFromDate = !dateFrom || row.dataset.date >= dateFrom;
+                const matchesToDate = !dateTo || row.dataset.date <= dateTo;
+                const matchesDescription = !description || row.dataset.description.includes(description);
+                const visible = matchesCategory && matchesFromDate && matchesToDate && matchesDescription;
+                row.hidden = !visible;
+                if (visible) visibleCount += 1;
+            });
+
+            filterResultCount.textContent = "Showing " + visibleCount + " of " + expenseRows.length + " expenses";
+            noFilterResults.hidden = visibleCount !== 0;
+        }
+
+        categoryFilter.addEventListener("change", filterExpenses);
+        dateFromFilter.addEventListener("change", filterExpenses);
+        dateToFilter.addEventListener("change", filterExpenses);
+        descriptionFilter.addEventListener("input", filterExpenses);
+        document.getElementById("clearFilters").addEventListener("click", () => {
+            categoryFilter.value = "";
+            dateFromFilter.value = "";
+            dateToFilter.value = "";
+            descriptionFilter.value = "";
+            filterExpenses();
+        });
+
+        filterExpenses();
+    }
+</script>
+<script>
+    const themePicker = document.getElementById("themePicker");
+    const savedTheme = localStorage.getItem("budgetTrackerTheme");
+    const availableThemes = ["rose", "lavender", "ocean", "sage"];
+    const initialTheme = availableThemes.includes(savedTheme) ? savedTheme : "rose";
+    document.body.dataset.theme = initialTheme;
+    themePicker.value = initialTheme;
+    themePicker.addEventListener("change", () => {
+        document.body.dataset.theme = themePicker.value;
+        localStorage.setItem("budgetTrackerTheme", themePicker.value);
+    });
+</script>
+</body>
+</html>
