@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Smart Budget Tracker
 
 A Java and Spring Boot web application for recording expenses and keeping track of monthly budgets. The dashboard reads and saves data in MySQL.
@@ -49,3 +50,7 @@ You’ll need Java 22, Maven and a running MySQL server.
 4. Open [http://localhost:8080](http://localhost:8080).
 
 The app may create supporting tables for recurring expenses and the overall budget automatically. Do not commit database passwords or other private credentials to GitHub; keep them in your local terminal environment.
+=======
+# smart-budget-tracker
+Java and Spring Boot budget tracker with a MySQL database and interactive spending dashboard.
+>>>>>>> 6c94063c39ca2491b6ef1c43ce523274eac81647
